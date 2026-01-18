@@ -1,0 +1,10 @@
+# EiffelStudio compilation outputs
+EIFGENs/
+
+# Editor backups
+*~
+*.bak
+
+# OS files
+Thumbs.db
+.DS_Store
