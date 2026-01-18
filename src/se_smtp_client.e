@@ -20,7 +20,7 @@ feature {NONE} -- Initialization
 		do
 			internal_host := a_host
 			port := a_port
-			timeout := 30000
+			timeout := Default_timeout_ms
 		ensure
 			host_set: host.same_string (a_host)
 			port_set: port = a_port
@@ -82,7 +82,7 @@ feature -- Connection (Commands)
 					last_error := Void
 					-- Read greeting
 					read_response
-					if not response_ok (220) then
+					if not response_ok (Smtp_reply_service_ready) then
 						last_error := "Server rejected connection"
 						l_socket.disconnect
 					end
@@ -103,7 +103,7 @@ feature -- Connection (Commands)
 					last_error := Void
 					-- Read greeting
 					read_response
-					if not response_ok (220) then
+					if not response_ok (Smtp_reply_service_ready) then
 						last_error := "Server rejected connection"
 						l_socket.disconnect
 					end
@@ -118,7 +118,7 @@ feature -- Connection (Commands)
 				-- Send STARTTLS command
 				send_command ("STARTTLS")
 				read_response
-				if response_ok (220) then
+				if response_ok (Smtp_reply_service_ready) then
 					l_socket.start_tls (internal_host)
 					if l_socket.has_error then
 						last_error := l_socket.last_error
@@ -134,11 +134,11 @@ feature -- Connection (Commands)
 		do
 			send_command ("EHLO " + local_hostname)
 			read_response
-			if not response_ok (250) then
+			if not response_ok (Smtp_reply_action_ok) then
 				-- Fall back to HELO
 				send_command ("HELO " + local_hostname)
 				read_response
-				if not response_ok (250) then
+				if not response_ok (Smtp_reply_action_ok) then
 					last_error := "Server rejected greeting"
 				end
 			end
@@ -182,7 +182,7 @@ feature -- Authentication (Commands)
 
 			send_command ("AUTH PLAIN " + l_encoded)
 			read_response
-			if response_ok (235) then
+			if response_ok (Smtp_reply_auth_success) then
 				is_authenticated := True
 				last_error := Void
 			else
@@ -198,15 +198,15 @@ feature -- Authentication (Commands)
 		do
 			send_command ("AUTH LOGIN")
 			read_response
-			if response_ok (334) then
+			if response_ok (Smtp_reply_auth_continue) then
 				-- Send base64 username
 				send_command (base64_encode (a_username))
 				read_response
-				if response_ok (334) then
+				if response_ok (Smtp_reply_auth_continue) then
 					-- Send base64 password
 					send_command (base64_encode (a_password))
 					read_response
-					if response_ok (235) then
+					if response_ok (Smtp_reply_auth_success) then
 						is_authenticated := True
 						last_error := Void
 					else
@@ -234,7 +234,7 @@ feature -- Sending (Commands)
 			-- MAIL FROM
 			send_command ("MAIL FROM:<" + a_message.from_address + ">")
 			read_response
-			if not response_ok (250) then
+			if not response_ok (Smtp_reply_action_ok) then
 				last_error := "MAIL FROM rejected"
 			end
 
@@ -243,21 +243,21 @@ feature -- Sending (Commands)
 				across a_message.recipients as l_rcpt loop
 					send_command ("RCPT TO:<" + l_rcpt + ">")
 					read_response
-					if not response_ok (250) and not response_ok (251) then
+					if not response_ok (Smtp_reply_action_ok) and not response_ok (Smtp_reply_user_not_local) then
 						last_error := "RCPT TO rejected: " + l_rcpt
 					end
 				end
 				across a_message.cc_recipients as l_rcpt loop
 					send_command ("RCPT TO:<" + l_rcpt + ">")
 					read_response
-					if not response_ok (250) and not response_ok (251) then
+					if not response_ok (Smtp_reply_action_ok) and not response_ok (Smtp_reply_user_not_local) then
 						last_error := "RCPT TO rejected: " + l_rcpt
 					end
 				end
 				across a_message.bcc_recipients as l_rcpt loop
 					send_command ("RCPT TO:<" + l_rcpt + ">")
 					read_response
-					if not response_ok (250) and not response_ok (251) then
+					if not response_ok (Smtp_reply_action_ok) and not response_ok (Smtp_reply_user_not_local) then
 						last_error := "RCPT TO rejected: " + l_rcpt
 					end
 				end
@@ -267,13 +267,13 @@ feature -- Sending (Commands)
 				-- DATA
 				send_command ("DATA")
 				read_response
-				if response_ok (354) then
+				if response_ok (Smtp_reply_start_mail_input) then
 					-- Send message content
 					send_message_content (a_message)
 					-- End with CRLF.CRLF
 					send_line (".")
 					read_response
-					if not response_ok (250) then
+					if not response_ok (Smtp_reply_action_ok) then
 						last_error := "Message rejected"
 					end
 				else
@@ -379,7 +379,7 @@ feature {NONE} -- Message Formatting
 	joined_addresses (a_list: ARRAYED_LIST [STRING]): STRING
 			-- Join addresses with comma.
 		do
-			create Result.make (a_list.count * 30)
+			create Result.make (a_list.count * Address_buffer_estimate)
 			across a_list as l_addr loop
 				if not Result.is_empty then
 					Result.append (", ")
@@ -431,7 +431,7 @@ feature {NONE} -- Protocol Helpers
 			l_done: BOOLEAN
 		do
 			if attached socket as l_socket then
-				create last_response.make (256)
+				create last_response.make (Response_buffer_size)
 				from
 					l_done := False
 				until
@@ -501,6 +501,35 @@ feature {NONE} -- Implementation
 
 	timeout: INTEGER
 			-- Connection timeout
+
+feature {NONE} -- Constants
+
+	Default_timeout_ms: INTEGER = 30000
+			-- Default connection timeout in milliseconds
+
+	Smtp_reply_service_ready: INTEGER = 220
+			-- SMTP 220 Service ready
+
+	Smtp_reply_action_ok: INTEGER = 250
+			-- SMTP 250 Requested action OK
+
+	Smtp_reply_user_not_local: INTEGER = 251
+			-- SMTP 251 User not local; will forward
+
+	Smtp_reply_auth_success: INTEGER = 235
+			-- SMTP 235 Authentication successful
+
+	Smtp_reply_auth_continue: INTEGER = 334
+			-- SMTP 334 Authentication continuation
+
+	Smtp_reply_start_mail_input: INTEGER = 354
+			-- SMTP 354 Start mail input
+
+	Response_buffer_size: INTEGER = 256
+			-- Initial buffer size for reading responses
+
+	Address_buffer_estimate: INTEGER = 30
+			-- Estimated characters per email address for buffer sizing
 
 invariant
 	host_exists: internal_host /= Void

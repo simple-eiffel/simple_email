@@ -16,8 +16,8 @@ feature {NONE} -- Initialization
 			-- Create email client.
 		do
 			smtp_host := ""
-			smtp_port := 587
-			timeout := 30
+			smtp_port := Default_smtp_starttls_port
+			timeout := Default_timeout_seconds
 		end
 
 feature -- Access (Queries)
@@ -246,6 +246,14 @@ feature {NONE} -- Implementation
 
 	timeout: INTEGER
 			-- Connection timeout in seconds
+
+feature {NONE} -- Constants
+
+	Default_smtp_starttls_port: INTEGER = 587
+			-- Default SMTP port for STARTTLS connections
+
+	Default_timeout_seconds: INTEGER = 30
+			-- Default connection timeout in seconds
 
 invariant
 	host_exists: smtp_host /= Void
