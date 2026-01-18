@@ -115,11 +115,14 @@ feature -- Sender (Commands)
 			-- Set sender address.
 		require
 			address_not_empty: not a_address.is_empty
+			address_has_at: a_address.has ('@')
+			address_no_newlines: not a_address.has ('%R') and not a_address.has ('%N')
 		do
 			internal_from := a_address
 		ensure
 			from_set: from_address.same_string (a_address)
 			has_from: has_from
+			recipients_unchanged: recipients.count = old recipients.count
 		end
 
 feature -- Recipients (Commands)
@@ -128,33 +131,43 @@ feature -- Recipients (Commands)
 			-- Add To recipient.
 		require
 			address_not_empty: not a_address.is_empty
+			address_has_at: a_address.has ('@')
+			address_no_newlines: not a_address.has ('%R') and not a_address.has ('%N')
 		do
 			recipients.extend (a_address)
 		ensure
 			one_more: recipients.count = old recipients.count + 1
 			has_recipients: has_recipients
+			from_unchanged: from_address.same_string (old from_address.twin)
 		end
 
 	add_cc (a_address: STRING)
 			-- Add Cc recipient.
 		require
 			address_not_empty: not a_address.is_empty
+			address_has_at: a_address.has ('@')
+			address_no_newlines: not a_address.has ('%R') and not a_address.has ('%N')
 		do
 			cc_recipients.extend (a_address)
 		ensure
 			one_more: cc_recipients.count = old cc_recipients.count + 1
 			has_recipients: has_recipients
+			to_unchanged: recipients.count = old recipients.count
 		end
 
 	add_bcc (a_address: STRING)
 			-- Add Bcc recipient.
 		require
 			address_not_empty: not a_address.is_empty
+			address_has_at: a_address.has ('@')
+			address_no_newlines: not a_address.has ('%R') and not a_address.has ('%N')
 		do
 			bcc_recipients.extend (a_address)
 		ensure
 			one_more: bcc_recipients.count = old bcc_recipients.count + 1
 			has_recipients: has_recipients
+			to_unchanged: recipients.count = old recipients.count
+			cc_unchanged: cc_recipients.count = old cc_recipients.count + 0
 		end
 
 	clear_recipients

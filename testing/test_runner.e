@@ -35,6 +35,30 @@ feature -- Test Execution
 			run_smtp_client_tests
 			run_tls_socket_tests
 			run_facade_tests
+			run_adversarial_tests
+			run_stress_tests
+		end
+
+	run_adversarial_tests
+			-- Run adversarial tests.
+		local
+			l_adv: ADVERSARIAL_TESTS
+		do
+			create l_adv.make
+			l_adv.run_all
+			passed := passed + l_adv.passed
+			failed := failed + l_adv.failed
+		end
+
+	run_stress_tests
+			-- Run stress tests.
+		local
+			l_stress: STRESS_TESTS
+		do
+			create l_stress.make
+			l_stress.run_all
+			passed := passed + l_stress.passed
+			failed := failed + l_stress.failed
 		end
 
 	run_message_tests
@@ -347,6 +371,44 @@ feature -- Test Execution
 				report_pass ("test_facade_disconnect")
 			else
 				report_fail ("test_facade_disconnect")
+			end
+
+			-- Test set_credentials
+			create l_email.make
+			l_email.set_credentials ("user@test.com", "secret123")
+			if l_email.has_credentials then
+				report_pass ("test_facade_set_credentials")
+			else
+				report_fail ("test_facade_set_credentials")
+			end
+
+			-- Test has_credentials initially false
+			create l_email.make
+			if not l_email.has_credentials then
+				report_pass ("test_facade_no_credentials_initially")
+			else
+				report_fail ("test_facade_no_credentials_initially")
+			end
+
+			-- Test set_timeout
+			create l_email.make
+			l_email.set_timeout (60)
+			report_pass ("test_facade_set_timeout")
+
+			-- Test not authenticated initially
+			create l_email.make
+			if not l_email.is_authenticated then
+				report_pass ("test_facade_not_authenticated_initially")
+			else
+				report_fail ("test_facade_not_authenticated_initially")
+			end
+
+			-- Test not tls initially
+			create l_email.make
+			if not l_email.is_tls_active then
+				report_pass ("test_facade_not_tls_initially")
+			else
+				report_fail ("test_facade_not_tls_initially")
 			end
 		end
 

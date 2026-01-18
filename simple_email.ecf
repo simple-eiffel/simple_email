@@ -18,8 +18,29 @@
 			<void_safety support="all"/>
 		</capability>
 		<library name="base" location="$ISE_LIBRARY\library\base\base.ecf"/>
+		<library name="time" location="$ISE_LIBRARY\library\time\time.ecf"/>
 		<library name="net" location="$ISE_LIBRARY\library\net\net.ecf"/>
 		<library name="simple_base64" location="..\simple_base64\simple_base64.ecf"/>
+		<external_object location="ws2_32.lib">
+			<condition>
+				<platform value="windows"/>
+			</condition>
+		</external_object>
+		<external_object location="secur32.lib">
+			<condition>
+				<platform value="windows"/>
+			</condition>
+		</external_object>
+		<external_object location="crypt32.lib">
+			<condition>
+				<platform value="windows"/>
+			</condition>
+		</external_object>
+		<external_include location="$ECF_CONFIG_PATH\src">
+			<condition>
+				<platform value="windows"/>
+			</condition>
+		</external_include>
 		<cluster name="src" location=".\src\" recursive="true"/>
 	</target>
 	<target name="simple_email_tests" extends="simple_email">

@@ -57,6 +57,12 @@ feature -- Status (Boolean Queries)
 			Result := last_error /= Void
 		end
 
+	has_credentials: BOOLEAN
+			-- Are authentication credentials configured?
+		do
+			Result := attached username as u and then not u.is_empty
+		end
+
 feature -- Settings (Commands)
 
 	set_smtp_server (a_host: STRING; a_port: INTEGER)
@@ -97,18 +103,87 @@ feature -- Settings (Commands)
 feature -- Connection (Commands)
 
 	connect
-			-- Connect to SMTP server.
+			-- Connect to SMTP server (plain connection, use STARTTLS for encryption).
 		require
 			server_configured: not smtp_host.is_empty
 			not_connected: not is_connected
 		do
+			last_error := Void
 			create smtp_client.make (smtp_host, smtp_port)
 			if attached smtp_client as l_client then
 				l_client.connect
 				if l_client.has_error then
 					last_error := l_client.last_error
 				else
-					last_error := Void
+					-- Send EHLO to start session
+					l_client.send_ehlo
+					if l_client.has_error then
+						last_error := l_client.last_error
+					end
+				end
+			end
+		ensure
+			connected_or_error: is_connected or has_error
+			port_unchanged: smtp_port = old smtp_port
+			host_unchanged: smtp_host.same_string (old smtp_host.twin)
+		end
+
+	connect_tls
+			-- Connect to SMTP server with implicit TLS (port 465).
+		require
+			server_configured: not smtp_host.is_empty
+			not_connected: not is_connected
+		do
+			last_error := Void
+			create smtp_client.make (smtp_host, smtp_port)
+			if attached smtp_client as l_client then
+				l_client.connect_tls
+				if l_client.has_error then
+					last_error := l_client.last_error
+				else
+					-- Send EHLO to start session
+					l_client.send_ehlo
+					if l_client.has_error then
+						last_error := l_client.last_error
+					end
+				end
+			end
+		end
+
+	start_tls
+			-- Upgrade existing connection to TLS (STARTTLS).
+		require
+			connected: is_connected
+			not_already_tls: not is_tls_active
+		do
+			last_error := Void
+			if attached smtp_client as l_client then
+				l_client.start_tls
+				if l_client.has_error then
+					last_error := l_client.last_error
+				else
+					-- Re-send EHLO after TLS upgrade
+					l_client.send_ehlo
+					if l_client.has_error then
+						last_error := l_client.last_error
+					end
+				end
+			end
+		end
+
+	authenticate
+			-- Authenticate with stored credentials.
+		require
+			connected: is_connected
+			credentials_set: has_credentials
+		do
+			last_error := Void
+			if attached smtp_client as l_client then
+				if attached username as u and attached password as p then
+					l_client.authenticate_plain (u, p)
+					if l_client.has_error then
+						last_error := l_client.last_error
+					end
 				end
 			end
 		end
@@ -132,11 +207,24 @@ feature -- Email Operations
 			-- Send `a_message'. Return True if successful.
 		require
 			connected: is_connected
+			authenticated: is_authenticated
 			message_valid: a_message.is_valid
 		do
-			-- Stub implementation
-			Result := False
-			last_error := "Not implemented"
+			last_error := Void
+			if attached smtp_client as l_client then
+				l_client.send_message (a_message)
+				if l_client.has_error then
+					last_error := l_client.last_error
+					Result := False
+				else
+					Result := True
+				end
+			else
+				Result := False
+				last_error := "Not connected"
+			end
+		ensure
+			error_on_failure: not Result implies has_error
 		end
 
 	create_message: SE_MESSAGE
