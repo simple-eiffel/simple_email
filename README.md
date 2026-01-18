@@ -1,14 +1,19 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/simple-eiffel/.github/main/profile/assets/logo.png" alt="simple_ library logo" width="400">
+  <img src="docs/images/logo.png" alt="simple_email logo" width="200">
 </p>
 
-# simple_email
+<h1 align="center">simple_email</h1>
 
-**[Documentation](https://simple-eiffel.github.io/simple_email/)** | **[GitHub](https://github.com/simple-eiffel/simple_email)**
+<p align="center">
+  <a href="https://simple-eiffel.github.io/simple_email/">Documentation</a> •
+  <a href="https://github.com/simple-eiffel/simple_email">GitHub</a>
+</p>
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Eiffel](https://img.shields.io/badge/Eiffel-25.02-blue.svg)](https://www.eiffel.org/)
-[![Design by Contract](https://img.shields.io/badge/DbC-enforced-orange.svg)]()
+<p align="center">
+  <img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT">
+  <img src="https://img.shields.io/badge/Eiffel-25.02-purple.svg" alt="Eiffel 25.02">
+  <img src="https://img.shields.io/badge/DBC-Contracts-green.svg" alt="Design by Contract">
+</p>
 
 SMTP email library for Eiffel with TLS encryption via Windows SChannel.
 
@@ -16,7 +21,11 @@ Part of the [Simple Eiffel](https://github.com/simple-eiffel) ecosystem.
 
 ## Status
 
-**Production** - Phase 2 complete, 52 tests passing, security hardened
+✅ **Production Ready** — v2.0.0
+- 5 classes, 52 tests passing
+- STARTTLS and implicit TLS support
+- Full Design by Contract coverage
+- Security hardened with adversarial tests
 
 ## Overview
 
@@ -185,4 +194,4 @@ Email addresses are validated with Design by Contract preconditions:
 
 ## License
 
-MIT License
+MIT License - see [LICENSE](LICENSE) file.
