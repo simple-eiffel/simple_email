@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>simple_email - SMTP Email Library for Eiffel</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <header>
+        <div class="logo-container">
+            <img src="images/logo.png" alt="simple_* logo" class="logo">
+        </div>
+        <h1>simple_email</h1>
+        <p class="tagline">SMTP Email Library with TLS Encryption for Eiffel</p>
+        <div class="badges">
+            <span class="badge badge-version">v2.0.0</span>
+            <span class="badge badge-license">MIT</span>
+        </div>
+    </header>
+
+    <nav>
+        <ul>
+            <li><a href="#overview">Overview</a></li>
+            <li><a href="#quick-start">Quick Start</a></li>
+            <li><a href="#features">Features</a></li>
+            <li><a href="#api-reference">API Reference</a></li>
+            <li><a href="#security">Security</a></li>
+            <li><a href="https://github.com/simple-eiffel/simple_email">GitHub</a></li>
+        </ul>
+    </nav>
+
+    <main>
+        <section id="overview">
+            <h2>Overview</h2>
+            <p>
+                <strong>simple_email</strong> is a production-ready SMTP email library for Eiffel
+                with TLS encryption using native Windows SChannel (no OpenSSL dependency). It supports
+                <strong>STARTTLS</strong> upgrade, <strong>implicit TLS</strong> (port 465),
+                <strong>AUTH PLAIN/LOGIN</strong> authentication, and <strong>MIME multipart</strong>
+                messages with attachments.
+            </p>
+            <p>
+                Part of the <a href="https://github.com/simple-eiffel">Simple Eiffel</a> ecosystem.
+            </p>
+        </section>
+
+        <section id="quick-start">
+            <h2>Quick Start</h2>
+
+            <h3>Installation</h3>
+            <ol>
+                <li>Set the environment variable:
+<pre><code>export SIMPLE_EIFFEL=/d/prod</code></pre>
+                </li>
+                <li>Add to your ECF file:
+<pre><code>&lt;library name="simple_email" location="$SIMPLE_EIFFEL/simple_email/simple_email.ecf"/&gt;</code></pre>
+                </li>
+            </ol>
+
+            <h3>Send an Email</h3>
+<pre><code><span class="keyword">local</span>
+    email: <span class="type">SIMPLE_EMAIL</span>
+    msg: <span class="type">SE_MESSAGE</span>
+<span class="keyword">do</span>
+    <span class="keyword">create</span> email.make
+
+    <span class="comment">-- Configure SMTP server</span>
+    email.set_smtp_server (<span class="string">"smtp.gmail.com"</span>, 587)
+    email.set_credentials (<span class="string">"user@gmail.com"</span>, <span class="string">"app-password"</span>)
+
+    <span class="comment">-- Connect with STARTTLS</span>
+    email.connect
+    email.start_tls
+    email.authenticate
+
+    <span class="comment">-- Create message</span>
+    msg := email.create_message
+    msg.set_from (<span class="string">"user@gmail.com"</span>)
+    msg.add_to (<span class="string">"recipient@example.com"</span>)
+    msg.set_subject (<span class="string">"Hello from Eiffel!"</span>)
+    msg.set_text_body (<span class="string">"This email was sent using simple_email."</span>)
+
+    <span class="comment">-- Send</span>
+    <span class="keyword">if</span> email.send (msg) <span class="keyword">then</span>
+        print (<span class="string">"Email sent successfully!"</span>)
+    <span class="keyword">end</span>
+
+    email.disconnect
+<span class="keyword">end</span></code></pre>
+        </section>
+
+        <section id="features">
+            <h2>Key Features</h2>
+
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <h3>TLS Encryption</h3>
+                    <p>Native Windows SChannel - no OpenSSL dependency required.</p>
+                </div>
+
+                <div class="feature-card">
+                    <h3>STARTTLS Support</h3>
+                    <p>Upgrade plain connections to encrypted on port 587.</p>
+                </div>
+
+                <div class="feature-card">
+                    <h3>Implicit TLS</h3>
+                    <p>Direct encrypted connections on port 465.</p>
+                </div>
+
+                <div class="feature-card">
+                    <h3>Authentication</h3>
+                    <p>AUTH PLAIN and AUTH LOGIN mechanisms supported.</p>
+                </div>
+
+                <div class="feature-card">
+                    <h3>MIME Multipart</h3>
+                    <p>Text + HTML bodies and file attachments.</p>
+                </div>
+
+                <div class="feature-card">
+                    <h3>Security Hardened</h3>
+                    <p>Input validation prevents CRLF injection attacks.</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="api-reference">
+            <h2>API Reference</h2>
+
+            <h3>SIMPLE_EMAIL - Facade Class</h3>
+            <table class="api-table">
+                <tr>
+                    <th>Method</th>
+                    <th>Description</th>
+                </tr>
+                <tr>
+                    <td><code>set_smtp_server (host, port)</code></td>
+                    <td>Configure SMTP server hostname and port</td>
+                </tr>
+                <tr>
+                    <td><code>set_credentials (user, pass)</code></td>
+                    <td>Set authentication credentials</td>
+                </tr>
+                <tr>
+                    <td><code>connect</code></td>
+                    <td>Connect to server (plain connection)</td>
+                </tr>
+                <tr>
+                    <td><code>connect_tls</code></td>
+                    <td>Connect with implicit TLS (port 465)</td>
+                </tr>
+                <tr>
+                    <td><code>start_tls</code></td>
+                    <td>Upgrade connection to TLS (STARTTLS)</td>
+                </tr>
+                <tr>
+                    <td><code>authenticate</code></td>
+                    <td>Authenticate with stored credentials</td>
+                </tr>
+                <tr>
+                    <td><code>send (message)</code></td>
+                    <td>Send email message, returns success boolean</td>
+                </tr>
+                <tr>
+                    <td><code>create_message</code></td>
+                    <td>Factory for new SE_MESSAGE</td>
+                </tr>
+                <tr>
+                    <td><code>disconnect</code></td>
+                    <td>Close connection</td>
+                </tr>
+            </table>
+
+            <h3>SE_MESSAGE - Email Message</h3>
+            <table class="api-table">
+                <tr>
+                    <th>Method</th>
+                    <th>Description</th>
+                </tr>
+                <tr>
+                    <td><code>set_from (address)</code></td>
+                    <td>Set sender address (validated)</td>
+                </tr>
+                <tr>
+                    <td><code>add_to (address)</code></td>
+                    <td>Add To recipient</td>
+                </tr>
+                <tr>
+                    <td><code>add_cc (address)</code></td>
+                    <td>Add Cc recipient</td>
+                </tr>
+                <tr>
+                    <td><code>add_bcc (address)</code></td>
+                    <td>Add Bcc recipient</td>
+                </tr>
+                <tr>
+                    <td><code>set_subject (text)</code></td>
+                    <td>Set subject line</td>
+                </tr>
+                <tr>
+                    <td><code>set_text_body (text)</code></td>
+                    <td>Set plain text body</td>
+                </tr>
+                <tr>
+                    <td><code>set_html_body (html)</code></td>
+                    <td>Set HTML body</td>
+                </tr>
+                <tr>
+                    <td><code>attach_file (path)</code></td>
+                    <td>Attach file from path</td>
+                </tr>
+                <tr>
+                    <td><code>attach_data (name, type, data)</code></td>
+                    <td>Attach inline data</td>
+                </tr>
+                <tr>
+                    <td><code>is_valid</code></td>
+                    <td>True if has from + recipients</td>
+                </tr>
+            </table>
+        </section>
+
+        <section id="security">
+            <h2>Security</h2>
+            <p>
+                simple_email uses Design by Contract to enforce input validation.
+                All email addresses must:
+            </p>
+            <ul>
+                <li>Not be empty</li>
+                <li>Contain an @ symbol</li>
+                <li>Not contain CR or LF characters (prevents CRLF injection)</li>
+            </ul>
+            <p>
+                The library has been security hardened with:
+            </p>
+            <ul>
+                <li>10 adversarial tests (injection, boundary, state attacks)</li>
+                <li>6 stress tests (1000 recipients, 100 attachments, 1MB bodies)</li>
+                <li>15 DBC contracts protecting critical operations</li>
+            </ul>
+        </section>
+
+        <section id="class-structure">
+            <h2>Class Structure</h2>
+            <table class="api-table">
+                <tr>
+                    <th>Class</th>
+                    <th>Purpose</th>
+                </tr>
+                <tr>
+                    <td><code>SIMPLE_EMAIL</code></td>
+                    <td>High-level facade for sending email</td>
+                </tr>
+                <tr>
+                    <td><code>SE_MESSAGE</code></td>
+                    <td>Email message with headers, body, attachments</td>
+                </tr>
+                <tr>
+                    <td><code>SE_ATTACHMENT</code></td>
+                    <td>File or inline attachment</td>
+                </tr>
+                <tr>
+                    <td><code>SE_SMTP_CLIENT</code></td>
+                    <td>Full SMTP protocol implementation</td>
+                </tr>
+                <tr>
+                    <td><code>SE_TLS_SOCKET</code></td>
+                    <td>WinSock + SChannel TLS socket</td>
+                </tr>
+            </table>
+        </section>
+    </main>
+
+    <footer>
+        <p>&copy; 2025 simple_* ecosystem. MIT License.</p>
+        <p>
+            <a href="https://github.com/simple-eiffel/simple_email">GitHub</a> |
+            <a href="https://simple-eiffel.github.io">Documentation</a>
+        </p>
+    </footer>
+</body>
+</html>
