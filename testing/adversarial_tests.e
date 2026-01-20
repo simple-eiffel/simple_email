@@ -199,6 +199,78 @@ feature -- State Tests
 			print ("  FAIL: test_multiple_recipients - exception%N")
 		end
 
+feature -- UTF-8 Validation Tests
+
+	test_valid_utf8_body
+			-- Test that valid UTF-8 body passes validation
+		local
+			l_msg: SE_MESSAGE
+		do
+			create l_msg.make
+			l_msg.set_text_body ("Hello, world!")
+			if l_msg.is_body_utf8_valid then
+				passed := passed + 1
+				print ("  PASS: test_valid_utf8_body - ASCII body is valid UTF-8%N")
+			else
+				failed := failed + 1
+				print ("  FAIL: test_valid_utf8_body - ASCII body rejected%N")
+			end
+		rescue
+			failed := failed + 1
+			print ("  FAIL: test_valid_utf8_body - exception%N")
+		end
+
+	test_valid_utf8_unicode_body
+			-- Test that valid UTF-8 Unicode body passes validation
+		local
+			l_msg: SE_MESSAGE
+			l_body: STRING_8
+		do
+			create l_msg.make
+			-- UTF-8 for "Hëllo" (0xC3 0xAB for ë)
+			create l_body.make (10)
+			l_body.append ("H")
+			l_body.append_character ('%/195/')  -- 0xC3
+			l_body.append_character ('%/171/')  -- 0xAB (ë in UTF-8)
+			l_body.append ("llo")
+			l_msg.set_text_body (l_body)
+			if l_msg.is_body_utf8_valid then
+				passed := passed + 1
+				print ("  PASS: test_valid_utf8_unicode_body - UTF-8 body is valid%N")
+			else
+				failed := failed + 1
+				print ("  FAIL: test_valid_utf8_unicode_body - valid UTF-8 rejected%N")
+			end
+		rescue
+			failed := failed + 1
+			print ("  FAIL: test_valid_utf8_unicode_body - exception%N")
+		end
+
+	test_invalid_utf8_body
+			-- Test that invalid UTF-8 body is detected
+		local
+			l_msg: SE_MESSAGE
+			l_body: STRING_8
+		do
+			create l_msg.make
+			-- Invalid UTF-8: 0x80 is not a valid leading byte
+			create l_body.make (10)
+			l_body.append ("Hello")
+			l_body.append_character ('%/128/')  -- 0x80 (invalid leading byte)
+			l_body.append ("world")
+			l_msg.set_text_body (l_body)
+			if not l_msg.is_body_utf8_valid then
+				passed := passed + 1
+				print ("  PASS: test_invalid_utf8_body - invalid UTF-8 detected%N")
+			else
+				failed := failed + 1
+				print ("  FAIL: test_invalid_utf8_body - invalid UTF-8 not detected%N")
+			end
+		rescue
+			failed := failed + 1
+			print ("  FAIL: test_invalid_utf8_body - exception%N")
+		end
+
 feature -- Attachment Tests
 
 	test_empty_attachment_data
@@ -265,6 +337,11 @@ feature -- Run All
 			print ("%N-- State Tests --%N")
 			test_disconnect_when_not_connected
 			test_multiple_recipients
+
+			print ("%N-- UTF-8 Validation Tests --%N")
+			test_valid_utf8_body
+			test_valid_utf8_unicode_body
+			test_invalid_utf8_body
 
 			print ("%N-- Attachment Tests --%N")
 			test_empty_attachment_data

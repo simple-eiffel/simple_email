@@ -297,7 +297,7 @@ feature {NONE} -- Message Formatting
 			if not a_message.cc_recipients.is_empty then
 				send_line ("Cc: " + joined_addresses (a_message.cc_recipients))
 			end
-			send_line ("Subject: " + a_message.subject)
+			send_line ("Subject: " + encode_header_utf8 (a_message.subject))
 			send_line ("MIME-Version: 1.0")
 
 			if a_message.has_attachments then
@@ -397,6 +397,33 @@ feature {NONE} -- Message Formatting
 
 	boundary_counter: INTEGER
 			-- Counter for generating unique boundaries
+
+	encode_header_utf8 (a_text: STRING): STRING
+			-- Encode header text for non-ASCII characters using RFC 2047.
+			-- Returns =?UTF-8?B?base64?= format if non-ASCII present,
+			-- otherwise returns original text.
+		local
+			l_needs_encoding: BOOLEAN
+			i: INTEGER
+		do
+			-- Check if encoding is needed (any char > 127)
+			from
+				i := 1
+				l_needs_encoding := False
+			until
+				i > a_text.count or l_needs_encoding
+			loop
+				l_needs_encoding := a_text.item (i).code > 127
+				i := i + 1
+			end
+
+			if l_needs_encoding then
+				-- RFC 2047 encoded-word: =?charset?encoding?encoded_text?=
+				Result := "=?UTF-8?B?" + base64_encode (a_text) + "?="
+			else
+				Result := a_text
+			end
+		end
 
 feature {NONE} -- Protocol Helpers
 

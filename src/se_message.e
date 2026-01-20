@@ -95,6 +95,31 @@ feature -- Status (Boolean Queries)
 			Result := not attachments.is_empty
 		end
 
+	is_body_utf8_valid: BOOLEAN
+			-- Is body content valid UTF-8?
+			-- Validates both text_body and html_body if present.
+		local
+			l_detector: SIMPLE_ENCODING_DETECTOR
+		do
+			create l_detector.make
+			Result := True
+			if not internal_text_body.is_empty then
+				Result := l_detector.is_valid_utf8 (internal_text_body)
+			end
+			if Result and not internal_html_body.is_empty then
+				Result := l_detector.is_valid_utf8 (internal_html_body)
+			end
+		end
+
+	is_subject_utf8_valid: BOOLEAN
+			-- Is subject valid UTF-8?
+		local
+			l_detector: SIMPLE_ENCODING_DETECTOR
+		do
+			create l_detector.make
+			Result := internal_subject.is_empty or else l_detector.is_valid_utf8 (internal_subject)
+		end
+
 feature -- Measurement (Integer Queries)
 
 	recipient_count: INTEGER
