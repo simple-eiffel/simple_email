@@ -45,8 +45,10 @@
 		<cluster name="src" location=".\src\" recursive="true"/>
 	</target>
 	<target name="simple_email_tests" extends="simple_email">
-		<root class="TEST_RUNNER" feature="make"/>
+		<root class="TEST_APP" feature="make"/>
 		<setting name="console_application" value="true"/>
+				<library name="testing" location="$ISE_LIBRARY\library	esting	esting.ecf"/>
+				<library name="simple_testing" location="$SIMPLE_EIFFEL\simple_testing\simple_testing.ecf"/>
 		<cluster name="testing" location=".\testing\" recursive="true"/>
 	</target>
 </system>
