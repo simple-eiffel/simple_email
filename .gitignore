@@ -8,3 +8,6 @@ EIFGENs/
 # OS files
 Thumbs.db
 .DS_Store
+*.melted
+*.epr
+*.log
