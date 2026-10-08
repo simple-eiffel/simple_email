@@ -34,6 +34,7 @@ feature {NONE} -- Test Runners
 		do
 			create lib_tests
 			run_test (agent lib_tests.test_creation, "test_creation")
+			run_test (agent lib_tests.test_refused_connect_reports_refusal_quickly, "test_refused_connect_reports_refusal_quickly")
 		end
 
 feature {NONE} -- Implementation

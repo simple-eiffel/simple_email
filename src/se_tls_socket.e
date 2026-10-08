@@ -318,7 +318,7 @@ feature {NONE} -- C Externals
 				char port_str[16];
 				int res;
 				u_long mode;
-				fd_set write_fds;
+				fd_set write_fds, except_fds;
 				struct timeval tv;
 
 				memset(&hints, 0, sizeof(hints));
@@ -352,14 +352,28 @@ feature {NONE} -- C Externals
 
 					// Wait for connection with timeout
 					FD_ZERO(&write_fds);
+					FD_ZERO(&except_fds);
 					FD_SET(sock, &write_fds);
+					FD_SET(sock, &except_fds);
 					tv.tv_sec = $a_timeout / 1000;
 					tv.tv_usec = ($a_timeout % 1000) * 1000;
 
-					res = select(0, NULL, &write_fds, NULL, &tv);
+					res = select(0, NULL, &write_fds, &except_fds, &tv);
 					if (res <= 0) {
 						closesocket(sock);
 						return res == 0 ? 10060 : WSAGetLastError();
+					}
+
+					// A refused connect is reported in except_fds (not write_fds)
+					{
+						int so_err = 0;
+						int so_len = (int)sizeof(so_err);
+						getsockopt(sock, SOL_SOCKET, SO_ERROR, (char*)&so_err, &so_len);
+						if (so_err == 0 && FD_ISSET(sock, &except_fds)) so_err = WSAECONNREFUSED;
+						if (so_err != 0) {
+							closesocket(sock);
+							return so_err;
+						}
 					}
 				}
 
