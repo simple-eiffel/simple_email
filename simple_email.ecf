@@ -19,9 +19,8 @@
 		</capability>
 		<library name="base" location="$ISE_LIBRARY\library\base\base.ecf"/>
 		<library name="time" location="$ISE_LIBRARY\library\time\time.ecf"/>
-		<library name="net" location="$ISE_LIBRARY\library\net\net.ecf"/>
-		<library name="simple_base64" location="..\simple_base64\simple_base64.ecf"/>
-		<library name="simple_encoding" location="..\simple_encoding\simple_encoding.ecf"/>
+		<library name="simple_base64" location="$SIMPLE_EIFFEL\simple_base64\simple_base64.ecf"/>
+		<library name="simple_encoding" location="$SIMPLE_EIFFEL\simple_encoding\simple_encoding.ecf"/>
 		<external_object location="ws2_32.lib">
 			<condition>
 				<platform value="windows"/>
