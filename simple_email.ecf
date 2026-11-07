@@ -36,12 +36,42 @@
 				<platform value="windows"/>
 			</condition>
 		</external_object>
-		<external_include location="$ECF_CONFIG_PATH\src">
+		<external_include location="$ECF_CONFIG_PATH\platform\windows">
 			<condition>
 				<platform value="windows"/>
 			</condition>
 		</external_include>
+		<external_include location="$(SIMPLE_EIFFEL)/simple_email/Clib">
+			<condition>
+				<platform excluded_value="windows"/>
+			</condition>
+		</external_include>
+		<external_cflag value="-I/opt/homebrew/opt/openssl@3/include">
+			<condition>
+				<platform value="macintosh"/>
+			</condition>
+		</external_cflag>
+		<external_linker_flag value="-L/opt/homebrew/opt/openssl@3/lib -lssl -lcrypto">
+			<condition>
+				<platform value="macintosh"/>
+			</condition>
+		</external_linker_flag>
+		<external_linker_flag value="-lssl -lcrypto">
+			<condition>
+				<platform value="unix"/>
+			</condition>
+		</external_linker_flag>
 		<cluster name="src" location=".\src\" recursive="true"/>
+		<cluster name="platform_windows" location=".\platform\windows">
+			<condition>
+				<platform value="windows"/>
+			</condition>
+		</cluster>
+		<cluster name="platform_posix" location=".\platform\posix">
+			<condition>
+				<platform excluded_value="windows"/>
+			</condition>
+		</cluster>
 	</target>
 	<target name="simple_email_tests" extends="simple_email">
 		<root class="TEST_APP" feature="make"/>
