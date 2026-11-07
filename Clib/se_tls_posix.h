@@ -158,11 +158,54 @@ fail:
     return l_result;
 }
 
+#ifdef __linux__
+#include <pthread.h>
+#include <signal.h>
+#include <time.h>
+
+/* OpenSSL writes with plain write(), and Linux has no SO_NOSIGPIPE, so a peer that
+   has closed would raise SIGPIPE. Block it around the call and consume it, leaving
+   the rest of the program's signal handling alone. */
+typedef struct {
+    sigset_t old;
+    int was_pending;
+} se_pipe_guard;
+
+static void se_pipe_block(se_pipe_guard* a_guard)
+{
+    sigset_t l_pipe, l_pending;
+    sigemptyset(&l_pipe);
+    sigaddset(&l_pipe, SIGPIPE);
+    sigpending(&l_pending);
+    a_guard->was_pending = sigismember(&l_pending, SIGPIPE);
+    pthread_sigmask(SIG_BLOCK, &l_pipe, &a_guard->old);
+}
+
+static void se_pipe_restore(se_pipe_guard* a_guard)
+{
+    sigset_t l_pipe;
+    struct timespec l_zero = {0, 0};
+    sigemptyset(&l_pipe);
+    sigaddset(&l_pipe, SIGPIPE);
+    if (!a_guard->was_pending) {
+        while (sigtimedwait(&l_pipe, NULL, &l_zero) > 0) { }
+    }
+    pthread_sigmask(SIG_SETMASK, &a_guard->old, NULL);
+}
+#else
+typedef int se_pipe_guard;
+static void se_pipe_block(se_pipe_guard* a_guard) { (void) a_guard; }
+static void se_pipe_restore(se_pipe_guard* a_guard) { (void) a_guard; }
+#endif
+
 static void se_shutdown_tls(void* a_context)
 {
     se_tls* l_tls = (se_tls*) a_context;
+    se_pipe_guard l_guard;
     if (l_tls) {
+        se_pipe_block(&l_guard);
         SSL_shutdown(l_tls->session);
+        se_pipe_restore(&l_guard);
         SSL_free(l_tls->session);
         SSL_CTX_free(l_tls->context);
         free(l_tls);
@@ -172,7 +215,12 @@ static void se_shutdown_tls(void* a_context)
 static int se_send_tls(void* a_context, const void* a_data, int a_length)
 {
     se_tls* l_tls = (se_tls*) a_context;
-    int l_written = l_tls ? SSL_write(l_tls->session, a_data, a_length) : -1;
+    se_pipe_guard l_guard;
+    int l_written;
+    if (!l_tls) return -1;
+    se_pipe_block(&l_guard);
+    l_written = SSL_write(l_tls->session, a_data, a_length);
+    se_pipe_restore(&l_guard);
     return l_written > 0 ? l_written : -1;
 }
 

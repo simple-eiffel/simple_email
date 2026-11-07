@@ -35,11 +35,34 @@ feature {NONE} -- Test Runners
 			create lib_tests
 			run_test (agent lib_tests.test_creation, "test_creation")
 			run_test (agent lib_tests.test_refused_connect_reports_refusal_quickly, "test_refused_connect_reports_refusal_quickly")
+			create adversarial_tests.make
+			run_test (agent adversarial_tests.test_empty_email_address, "test_empty_email_address")
+			run_test (agent adversarial_tests.test_no_at_in_email, "test_no_at_in_email")
+			run_test (agent adversarial_tests.test_crlf_injection_from, "test_crlf_injection_from")
+			run_test (agent adversarial_tests.test_crlf_injection_to, "test_crlf_injection_to")
+			run_test (agent adversarial_tests.test_very_long_email, "test_very_long_email")
+			run_test (agent adversarial_tests.test_very_long_subject, "test_very_long_subject")
+			run_test (agent adversarial_tests.test_disconnect_when_not_connected, "test_disconnect_when_not_connected")
+			run_test (agent adversarial_tests.test_multiple_recipients, "test_multiple_recipients")
+			run_test (agent adversarial_tests.test_valid_utf8_body, "test_valid_utf8_body")
+			run_test (agent adversarial_tests.test_valid_utf8_unicode_body, "test_valid_utf8_unicode_body")
+			run_test (agent adversarial_tests.test_invalid_utf8_body, "test_invalid_utf8_body")
+			run_test (agent adversarial_tests.test_empty_attachment_data, "test_empty_attachment_data")
+			run_test (agent adversarial_tests.test_binary_attachment_data, "test_binary_attachment_data")
+			create stress_tests.make
+			run_test (agent stress_tests.test_100_recipients, "test_100_recipients")
+			run_test (agent stress_tests.test_1000_recipients, "test_1000_recipients")
+			run_test (agent stress_tests.test_100_attachments, "test_100_attachments")
+			run_test (agent stress_tests.test_large_body, "test_large_body")
+			run_test (agent stress_tests.test_rapid_message_creation, "test_rapid_message_creation")
+			run_test (agent stress_tests.test_rapid_client_creation, "test_rapid_client_creation")
 		end
 
 feature {NONE} -- Implementation
 
 	lib_tests: LIB_TESTS
+	adversarial_tests: ADVERSARIAL_TESTS
+	stress_tests: STRESS_TESTS
 	passed, failed: INTEGER
 
 	run_test (a_test: PROCEDURE; a_name: STRING)

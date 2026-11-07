@@ -130,131 +130,35 @@ feature {NONE} -- C Externals
 		end
 
 	c_start_tls (a_socket: POINTER; a_host: POINTER; a_context: TYPED_POINTER [POINTER]): INTEGER
-			-- Initiate TLS handshake. Return 0 on success.
+			-- Handshake, checking the certificate against `a_host'. Return 0 on success.
 		external
-			"C inline use %"se_tls_defs.h%""
+			"C inline use %"se_tls_schannel.h%""
 		alias
-			"[
-				SCHANNEL_CRED cred;
-				CredHandle hCred;
-				CtxtHandle hCtxt;
-				SecBufferDesc outBuffDesc, inBuffDesc;
-				SecBuffer outBuff[1], inBuff[2];
-				SECURITY_STATUS status;
-				DWORD flags, outFlags;
-				char buffer[16384];
-				int received;
-
-				// Initialize credentials
-				memset(&cred, 0, sizeof(cred));
-				cred.dwVersion = SCHANNEL_CRED_VERSION;
-				cred.grbitEnabledProtocols = SP_PROT_TLS1_2;
-				cred.dwFlags = SCH_CRED_AUTO_CRED_VALIDATION | SCH_CRED_NO_DEFAULT_CREDS;
-
-				status = AcquireCredentialsHandleA(NULL, UNISP_NAME_A, SECPKG_CRED_OUTBOUND,
-					NULL, &cred, NULL, NULL, &hCred, NULL);
-				if (status != SEC_E_OK) return status;
-
-				flags = ISC_REQ_SEQUENCE_DETECT | ISC_REQ_REPLAY_DETECT |
-						ISC_REQ_CONFIDENTIALITY | ISC_REQ_ALLOCATE_MEMORY |
-						ISC_REQ_STREAM;
-
-				// Initial handshake call
-				outBuff[0].pvBuffer = NULL;
-				outBuff[0].BufferType = SECBUFFER_TOKEN;
-				outBuff[0].cbBuffer = 0;
-				outBuffDesc.ulVersion = SECBUFFER_VERSION;
-				outBuffDesc.cBuffers = 1;
-				outBuffDesc.pBuffers = outBuff;
-
-				status = InitializeSecurityContextA(&hCred, NULL, (char*)$a_host, flags, 0,
-					SECURITY_NATIVE_DREP, NULL, 0, &hCtxt, &outBuffDesc, &outFlags, NULL);
-
-				while (status == SEC_I_CONTINUE_NEEDED || status == SEC_E_INCOMPLETE_MESSAGE) {
-					// Send any output
-					if (outBuff[0].cbBuffer > 0) {
-						send((SOCKET)$a_socket, (char*)outBuff[0].pvBuffer, outBuff[0].cbBuffer, 0);
-						FreeContextBuffer(outBuff[0].pvBuffer);
-					}
-
-					if (status == SEC_E_OK) break;
-
-					// Receive server response
-					received = recv((SOCKET)$a_socket, buffer, sizeof(buffer), 0);
-					if (received <= 0) {
-						FreeCredentialsHandle(&hCred);
-						return -1;
-					}
-
-					// Continue handshake
-					inBuff[0].pvBuffer = buffer;
-					inBuff[0].cbBuffer = received;
-					inBuff[0].BufferType = SECBUFFER_TOKEN;
-					inBuff[1].pvBuffer = NULL;
-					inBuff[1].cbBuffer = 0;
-					inBuff[1].BufferType = SECBUFFER_EMPTY;
-					inBuffDesc.ulVersion = SECBUFFER_VERSION;
-					inBuffDesc.cBuffers = 2;
-					inBuffDesc.pBuffers = inBuff;
-
-					outBuff[0].pvBuffer = NULL;
-					outBuff[0].BufferType = SECBUFFER_TOKEN;
-					outBuff[0].cbBuffer = 0;
-
-					status = InitializeSecurityContextA(&hCred, &hCtxt, NULL, flags, 0,
-						SECURITY_NATIVE_DREP, &inBuffDesc, 0, NULL, &outBuffDesc, &outFlags, NULL);
-				}
-
-				// Send final output if any
-				if (outBuff[0].cbBuffer > 0) {
-					send((SOCKET)$a_socket, (char*)outBuff[0].pvBuffer, outBuff[0].cbBuffer, 0);
-					FreeContextBuffer(outBuff[0].pvBuffer);
-				}
-
-				if (status != SEC_E_OK) {
-					FreeCredentialsHandle(&hCred);
-					return status;
-				}
-
-				// Store context (simplified - in production would need proper struct)
-				*$a_context = (EIF_POINTER)1; // Mark as established
-				return 0;
-			]"
+			"return (EIF_INTEGER) se_start_tls ((SOCKET) $a_socket, (const char *) $a_host, (void **) $a_context);"
 		end
 
 	c_shutdown_tls (a_socket: POINTER; a_context: POINTER)
-			-- Shutdown TLS connection.
+			-- Send close_notify and release the context.
 		external
-			"C inline use %"se_tls_defs.h%""
+			"C inline use %"se_tls_schannel.h%""
 		alias
-			"[
-				// Simplified - just mark as done
-				// In production would send proper TLS close_notify
-			]"
+			"se_shutdown_tls ((void *) $a_context);"
 		end
 
 	c_send_tls (a_socket: POINTER; a_context: POINTER; a_data: POINTER; a_len: INTEGER): INTEGER
-			-- Send data over TLS. Return bytes sent or -1 on error.
+			-- Encrypt and send. Return bytes sent or -1 on error.
 		external
-			"C inline use %"se_tls_defs.h%""
+			"C inline use %"se_tls_schannel.h%""
 		alias
-			"[
-				// Simplified: For proper implementation would need to encrypt with EncryptMessage
-				// For now, send plain (TLS handshake established connection security)
-				return send((SOCKET)$a_socket, (char*)$a_data, $a_len, 0);
-			]"
+			"return (EIF_INTEGER) se_send_tls ((void *) $a_context, (const void *) $a_data, (int) $a_len);"
 		end
 
 	c_receive_tls (a_socket: POINTER; a_context: POINTER; a_buffer: POINTER; a_max: INTEGER): INTEGER
-			-- Receive data over TLS. Return bytes received or -1 on error.
+			-- Receive and decrypt. Return bytes received, 0 at close, or -1 on error.
 		external
-			"C inline use %"se_tls_defs.h%""
+			"C inline use %"se_tls_schannel.h%""
 		alias
-			"[
-				// Simplified: For proper implementation would need to decrypt with DecryptMessage
-				// For now, receive plain (TLS handshake established connection security)
-				return recv((SOCKET)$a_socket, (char*)$a_buffer, $a_max, 0);
-			]"
+			"return (EIF_INTEGER) se_receive_tls ((void *) $a_context, (void *) $a_buffer, (int) $a_max);"
 		end
 
 end
