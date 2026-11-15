@@ -37,8 +37,13 @@ feature -- Empty Input Tests
 				print ("  RISK: test_empty_email_address - empty string accepted%N")
 			end
 		rescue
-			passed := passed + 1
-			print ("  PASS: test_empty_email_address - precondition correctly blocked empty%N")
+			if is_precondition_failure then
+				passed := passed + 1
+				print ("  PASS: test_empty_email_address - precondition correctly blocked empty%N")
+			else
+				failed := failed + 1
+				print ("  FAIL: test_empty_email_address - an exception that is not a precondition violation%N")
+			end
 			l_retried := True
 			retry
 		end
@@ -57,8 +62,13 @@ feature -- Empty Input Tests
 				print ("  RISK: test_no_at_in_email - address without @ accepted%N")
 			end
 		rescue
-			passed := passed + 1
-			print ("  PASS: test_no_at_in_email - precondition correctly blocked%N")
+			if is_precondition_failure then
+				passed := passed + 1
+				print ("  PASS: test_no_at_in_email - precondition correctly blocked%N")
+			else
+				failed := failed + 1
+				print ("  FAIL: test_no_at_in_email - an exception that is not a precondition violation%N")
+			end
 			l_retried := True
 			retry
 		end
@@ -79,8 +89,13 @@ feature -- Injection Tests
 				print ("  RISK: test_crlf_injection_from - CRLF injection possible!%N")
 			end
 		rescue
-			passed := passed + 1
-			print ("  PASS: test_crlf_injection_from - CRLF injection blocked%N")
+			if is_precondition_failure then
+				passed := passed + 1
+				print ("  PASS: test_crlf_injection_from - CRLF injection blocked%N")
+			else
+				failed := failed + 1
+				print ("  FAIL: test_crlf_injection_from - an exception that is not a precondition violation%N")
+			end
 			l_retried := True
 			retry
 		end
@@ -99,8 +114,13 @@ feature -- Injection Tests
 				print ("  RISK: test_crlf_injection_to - CRLF injection possible!%N")
 			end
 		rescue
-			passed := passed + 1
-			print ("  PASS: test_crlf_injection_to - CRLF injection blocked%N")
+			if is_precondition_failure then
+				passed := passed + 1
+				print ("  PASS: test_crlf_injection_to - CRLF injection blocked%N")
+			else
+				failed := failed + 1
+				print ("  FAIL: test_crlf_injection_to - an exception that is not a precondition violation%N")
+			end
 			l_retried := True
 			retry
 		end
@@ -348,6 +368,17 @@ feature -- Run All
 			test_binary_attachment_data
 
 			print ("%N=== Summary: " + passed.out + " pass, " + failed.out + " fail, " + risk.out + " risk ===%N")
+		end
+
+
+feature {NONE} -- Implementation
+
+	is_precondition_failure: BOOLEAN
+			-- Was the exception being rescued a precondition violation? (port-coordination #17:
+			-- these tests counted any exception as the precondition they expect, so a crash
+			-- such as a call on Void passed too.)
+		do
+			Result := attached {PRECONDITION_VIOLATION} (create {EXCEPTION_MANAGER}).last_exception
 		end
 
 end
